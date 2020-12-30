@@ -60,7 +60,7 @@ func (b *tabdownParser) Open(parent gast.Node, reader text.Reader, pc parser.Con
 
 func (b *tabdownParser) Continue(node gast.Node, reader text.Reader, pc parser.Context) parser.State {
 	line, segment := reader.PeekLine()
-	if !util.IsBlank(line) {
+	if util.IsBlank(line) {
 		reader.Advance(segment.Len())
 		return parser.Close
 	}

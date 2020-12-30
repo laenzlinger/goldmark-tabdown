@@ -1,6 +1,13 @@
 package tabdown
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/parser"
+)
 
 func Test_isChordLine(t *testing.T) {
 	type args struct {
@@ -44,4 +51,27 @@ func Test_isChordLine(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMeta(t *testing.T) {
+	markdown := goldmark.New(
+		goldmark.WithExtensions(
+			Tabdown,
+		),
+	)
+	source := `
+# Let it be
+
+       C              G                 Am     Am7  Fmaj7    F6
+When I find myself in times of trouble, Mother Mary comes to me
+
+`
+
+	var buf bytes.Buffer
+	context := parser.NewContext()
+	if err := markdown.Convert([]byte(source), &buf, parser.WithContext(context)); err != nil {
+		panic(err)
+	}
+	assert.Equal(t, `<h1>Let it be</h1>
+`, buf.String())
 }
