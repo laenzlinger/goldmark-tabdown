@@ -22,18 +22,28 @@ func (b *tabdownParser) Trigger() []byte {
 func isChordLine(line []byte) bool {
 	line = util.TrimRightSpace(util.TrimLeftSpace(line))
 	chord := false
+	nrOfChords := 0
+	chordLength := 0
 	for i := 0; i < len(line); i++ {
 		if line[i] == '[' {
+			chordLength = 0
 			chord = true
-		} else if line[i] == ']' {
+		} else if chord && line[i] == ']' {
+			if chordLength > 0 {
+				nrOfChords++
+			}
 			chord = false
 		} else {
-			if !chord && util.IsSpace(line[i]) {
+			isSpace := util.IsSpace(line[i])
+			if chord && !isSpace {
+				chordLength++
+			}
+			if !chord && !isSpace {
 				return false
 			}
 		}
 	}
-	return true
+	return nrOfChords > 0
 }
 
 func (b *tabdownParser) Open(parent gast.Node, reader text.Reader, pc parser.Context) (gast.Node, parser.State) {

@@ -3,7 +3,7 @@ goldmark-tabdown
 [![GoDev][godev-image]][godev-url]
 
 [godev-image]: https://pkg.go.dev/badge/github.com/laenzlinger/goldmark-tabdown
-[godev-url]: https://pkg.go.dev/github.com/laenzlinger/goldmark-tabdwon
+[godev-url]: https://pkg.go.dev/github.com/laenzlinger/goldmark-tabdown
 
 
 goldmark-tabdown is an extension for the [goldmark](http://github.com/yuin/goldmark) 
