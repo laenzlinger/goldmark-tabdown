@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/text"
 )
 
 func Test_isChordLine(t *testing.T) {
@@ -53,7 +54,7 @@ func Test_isChordLine(t *testing.T) {
 	}
 }
 
-func TestMeta(t *testing.T) {
+func TestTabdown(t *testing.T) {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			Tabdown,
@@ -62,16 +63,21 @@ func TestMeta(t *testing.T) {
 	source := `
 # Let it be
 
-       C              G                 Am     Am7  Fmaj7    F6
+       [C]            [G]               [Am]  [Am7] [Fmaj7]  [F6]   
 When I find myself in times of trouble, Mother Mary comes to me
 
+[C]               [G]            [F]   [C]
+Speaking words of wisdom, let it be
 `
-
 	var buf bytes.Buffer
+	reader := text.NewReader([]byte(source))
+
+	doc := markdown.Parser().Parse(reader)
+	doc.Dump([]byte(source), 0)
+
 	context := parser.NewContext()
-	if err := markdown.Convert([]byte(source), &buf, parser.WithContext(context)); err != nil {
-		panic(err)
-	}
+	err := markdown.Convert([]byte(source), &buf, parser.WithContext(context))
+	assert.NoError(t, err)
 	assert.Equal(t, `<h1>Let it be</h1>
 `, buf.String())
 }

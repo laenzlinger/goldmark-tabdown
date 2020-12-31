@@ -1,13 +1,17 @@
 package tabdown
 
 import (
-	"bytes"
+	"regexp"
 
 	"github.com/yuin/goldmark"
 	gast "github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
+	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
+
+	"github.com/laenzlinger/goldmark-tabdown/ast"
 )
 
 type tabdownParser struct {
@@ -47,13 +51,14 @@ func isChordLine(line []byte) bool {
 }
 
 func (b *tabdownParser) Open(parent gast.Node, reader text.Reader, pc parser.Context) (gast.Node, parser.State) {
-	linenum, _ := reader.Position()
-	if linenum != 0 {
-		return nil, parser.NoChildren
-	}
 	line, _ := reader.PeekLine()
 	if isChordLine(line) {
-		return gast.NewTextBlock(), parser.NoChildren
+		reader.SkipSpaces()
+		_, segment := reader.PeekLine()
+		chordBlock := ast.NewChordBlock()
+		chordBlock.Lines().Append(segment)
+		reader.Advance(segment.Len() - 1)
+		return chordBlock, parser.NoChildren
 	}
 	return nil, parser.NoChildren
 }
@@ -61,20 +66,15 @@ func (b *tabdownParser) Open(parent gast.Node, reader text.Reader, pc parser.Con
 func (b *tabdownParser) Continue(node gast.Node, reader text.Reader, pc parser.Context) parser.State {
 	line, segment := reader.PeekLine()
 	if util.IsBlank(line) {
-		reader.Advance(segment.Len())
-		return parser.Close
+		reader.Advance(segment.Len() - 1)
+		return parser.Continue | parser.NoChildren
 	}
 	node.Lines().Append(segment)
-	return parser.Continue | parser.NoChildren
+	reader.Advance(segment.Len() - 1)
+	return parser.Close
 }
 
 func (b *tabdownParser) Close(node gast.Node, reader text.Reader, pc parser.Context) {
-	lines := node.Lines()
-	var buf bytes.Buffer
-	for i := 0; i < lines.Len(); i++ {
-		segment := lines.At(i)
-		buf.Write(segment.Value(reader.Source()))
-	}
 }
 
 func (b *tabdownParser) CanInterruptParagraph() bool {
@@ -108,10 +108,88 @@ func New(opts ...Option) goldmark.Extender {
 	return e
 }
 
+type chordParser struct {
+}
+
+var defaultChordParser = &chordParser{}
+
+// NewChordParser returns a new  InlineParser that can parse
+// Chords in a ChordBlock.
+// This parser must take precedence over the parser.LinkParser.
+func NewChordParser() parser.InlineParser {
+	return defaultChordParser
+}
+
+func (s *chordParser) Trigger() []byte {
+	return []byte{'['}
+}
+
+var taskListRegexp = regexp.MustCompile(`^\[(.*?)\]\s*`)
+
+func (s *chordParser) Parse(parent gast.Node, block text.Reader, pc parser.Context) gast.Node {
+	// Given AST structure must be like
+	// - ChordBlock
+	//     (current line)
+	if parent.Parent() == nil {
+		return nil
+	}
+
+	if _, ok := parent.(*ast.ChordBlock); !ok {
+		return nil
+	}
+
+	line, _ := block.PeekLine()
+	m := taskListRegexp.FindSubmatchIndex(line)
+	if m == nil {
+		return nil
+	}
+	value := line[m[2]:m[3]]
+	indent := block.LineOffset() + m[2] -1
+	block.Advance(m[1])
+
+	return ast.NewChord(indent, value)
+}
+
+func (s *chordParser) CloseBlock(parent gast.Node, pc parser.Context) {
+	// nothing to do
+}
+
+// ChordBlockHTMLRenderer is a renderer.NodeRenderer implementation that
+// renders ChordBlock nodes.
+type ChordBlockHTMLRenderer struct {
+	html.Config
+}
+
+// NewChordBlockHTMLRenderer returns a new ChordBlockHTMLRenderer.
+func NewChordBlockHTMLRenderer(opts ...html.Option) renderer.NodeRenderer {
+	r := &ChordBlockHTMLRenderer{
+		Config: html.NewConfig(),
+	}
+	for _, opt := range opts {
+		opt.SetHTMLOption(&r.Config)
+	}
+	return r
+}
+
+// RegisterFuncs implements renderer.NodeRenderer.RegisterFuncs.
+func (r *ChordBlockHTMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
+	reg.Register(ast.KindChordBlock, r.renderChordBlock)
+}
+
+func (r *ChordBlockHTMLRenderer) renderChordBlock(w util.BufWriter, source []byte, n gast.Node, entering bool) (gast.WalkStatus, error) {
+	return gast.WalkContinue, nil
+}
+
 func (e *tabdown) Extend(m goldmark.Markdown) {
 	m.Parser().AddOptions(
 		parser.WithBlockParsers(
 			util.Prioritized(NewParser(), 0),
 		),
+		parser.WithInlineParsers(
+			util.Prioritized(NewChordParser(), 0),
+		),
 	)
+	m.Renderer().AddOptions(renderer.WithNodeRenderers(
+		util.Prioritized(NewChordBlockHTMLRenderer(), 500),
+	))
 }
