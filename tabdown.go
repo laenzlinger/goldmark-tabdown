@@ -14,12 +14,12 @@ import (
 	"github.com/laenzlinger/goldmark-tabdown/ast"
 )
 
-type tabdownParser struct {
+type chordBlockParser struct {
 }
 
-var defaultTabdownParser = &tabdownParser{}
+var defaultChordBlockParser = &chordBlockParser{}
 
-func (b *tabdownParser) Trigger() []byte {
+func (b *chordBlockParser) Trigger() []byte {
 	return []byte{'['}
 }
 
@@ -50,7 +50,7 @@ func isChordLine(line []byte) bool {
 	return nrOfChords > 0
 }
 
-func (b *tabdownParser) Open(parent gast.Node, reader text.Reader, pc parser.Context) (gast.Node, parser.State) {
+func (b *chordBlockParser) Open(parent gast.Node, reader text.Reader, pc parser.Context) (gast.Node, parser.State) {
 	line, _ := reader.PeekLine()
 	if isChordLine(line) {
 		reader.SkipSpaces()
@@ -63,7 +63,7 @@ func (b *tabdownParser) Open(parent gast.Node, reader text.Reader, pc parser.Con
 	return nil, parser.NoChildren
 }
 
-func (b *tabdownParser) Continue(node gast.Node, reader text.Reader, pc parser.Context) parser.State {
+func (b *chordBlockParser) Continue(node gast.Node, reader text.Reader, pc parser.Context) parser.State {
 	line, segment := reader.PeekLine()
 	if util.IsBlank(line) {
 		reader.Advance(segment.Len() - 1)
@@ -74,20 +74,20 @@ func (b *tabdownParser) Continue(node gast.Node, reader text.Reader, pc parser.C
 	return parser.Close
 }
 
-func (b *tabdownParser) Close(node gast.Node, reader text.Reader, pc parser.Context) {
+func (b *chordBlockParser) Close(node gast.Node, reader text.Reader, pc parser.Context) {
 }
 
-func (b *tabdownParser) CanInterruptParagraph() bool {
+func (b *chordBlockParser) CanInterruptParagraph() bool {
 	return true
 }
 
-func (b *tabdownParser) CanAcceptIndentedLine() bool {
+func (b *chordBlockParser) CanAcceptIndentedLine() bool {
 	return true
 }
 
-// NewParser returns a BlockParser that can parse Tabdown blocks.
-func NewParser() parser.BlockParser {
-	return defaultTabdownParser
+// NewChordBlockParser returns a BlockParser that can parse Tabdown blocks.
+func NewChordBlockParser() parser.BlockParser {
+	return defaultChordBlockParser
 }
 
 type tabdown struct {
@@ -133,8 +133,11 @@ func (s *chordParser) Parse(parent gast.Node, block text.Reader, pc parser.Conte
 	if parent.Parent() == nil {
 		return nil
 	}
-
 	if _, ok := parent.(*ast.ChordBlock); !ok {
+		return nil
+	}
+	nr, _ := block.Position()
+	if nr > 0 {
 		return nil
 	}
 
@@ -144,7 +147,7 @@ func (s *chordParser) Parse(parent gast.Node, block text.Reader, pc parser.Conte
 		return nil
 	}
 	value := line[m[2]:m[3]]
-	indent := block.LineOffset() + m[2] -1
+	indent := block.LineOffset() + m[2] - 1
 	block.Advance(m[1])
 
 	return ast.NewChord(indent, value)
@@ -183,7 +186,7 @@ func (r *ChordBlockHTMLRenderer) renderChordBlock(w util.BufWriter, source []byt
 func (e *tabdown) Extend(m goldmark.Markdown) {
 	m.Parser().AddOptions(
 		parser.WithBlockParsers(
-			util.Prioritized(NewParser(), 0),
+			util.Prioritized(NewChordBlockParser(), 0),
 		),
 		parser.WithInlineParsers(
 			util.Prioritized(NewChordParser(), 0),

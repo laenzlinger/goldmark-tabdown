@@ -66,8 +66,8 @@ func TestTabdown(t *testing.T) {
        [C]            [G]               [Am]  [Am7] [Fmaj7]  [F6]   
 When I find myself in times of trouble, Mother Mary comes to me
 
-[C]               [G]            [F]   [C]
-Speaking words of wisdom, let it be
+[C]                     [G]                              [F]    [C] [F] [C]
+    Speaking *words* of [wisdom](http://www.google.com), let it be
 `
 	var buf bytes.Buffer
 	reader := text.NewReader([]byte(source))
@@ -78,6 +78,6 @@ Speaking words of wisdom, let it be
 	context := parser.NewContext()
 	err := markdown.Convert([]byte(source), &buf, parser.WithContext(context))
 	assert.NoError(t, err)
-	assert.Equal(t, `<h1>Let it be</h1>
+	assert.Equal(t, `<h1>Let it be</h1> ---
 `, buf.String())
 }
