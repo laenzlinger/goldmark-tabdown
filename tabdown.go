@@ -52,15 +52,16 @@ func isChordLine(line []byte) bool {
 
 func (b *chordBlockParser) Open(parent gast.Node, reader text.Reader, pc parser.Context) (gast.Node, parser.State) {
 	line, _ := reader.PeekLine()
-	if isChordLine(line) {
-		reader.SkipSpaces()
-		_, segment := reader.PeekLine()
-		chordBlock := ast.NewChordBlock()
-		chordBlock.Lines().Append(segment)
-		reader.Advance(segment.Len() - 1)
-		return chordBlock, parser.NoChildren
+	if !isChordLine(line) {
+		return nil, parser.NoChildren
 	}
-	return nil, parser.NoChildren
+
+	reader.SkipSpaces()
+	_, segment := reader.PeekLine()
+	chordBlock := ast.NewChordBlock()
+	chordBlock.Lines().Append(segment)
+	reader.Advance(segment.Len() - 1)
+	return chordBlock, parser.NoChildren
 }
 
 func (b *chordBlockParser) Continue(node gast.Node, reader text.Reader, pc parser.Context) parser.State {
@@ -88,24 +89,6 @@ func (b *chordBlockParser) CanAcceptIndentedLine() bool {
 // NewChordBlockParser returns a BlockParser that can parse Tabdown blocks.
 func NewChordBlockParser() parser.BlockParser {
 	return defaultChordBlockParser
-}
-
-type tabdown struct {
-}
-
-// Option is a functional option type for this extension.
-type Option func(*tabdown)
-
-// Tabdown is an extension for goldmark.
-var Tabdown = &tabdown{}
-
-// New returns a new tabdown extension.
-func New(opts ...Option) goldmark.Extender {
-	e := &tabdown{}
-	for _, opt := range opts {
-		opt(e)
-	}
-	return e
 }
 
 type chordParser struct {
@@ -181,6 +164,24 @@ func (r *ChordBlockHTMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegi
 
 func (r *ChordBlockHTMLRenderer) renderChordBlock(w util.BufWriter, source []byte, n gast.Node, entering bool) (gast.WalkStatus, error) {
 	return gast.WalkContinue, nil
+}
+
+type tabdown struct {
+}
+
+// Option is a functional option type for this extension.
+type Option func(*tabdown)
+
+// Tabdown is an extension for goldmark.
+var Tabdown = &tabdown{}
+
+// New returns a new tabdown extension.
+func New(opts ...Option) goldmark.Extender {
+	e := &tabdown{}
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
 func (e *tabdown) Extend(m goldmark.Markdown) {
