@@ -6,9 +6,9 @@ import (
 	gast "github.com/yuin/goldmark/ast"
 )
 
-// A Chord struct represents a checkbox of a task list.
+// A Chord struct represents a chord with its lyrics
 type Chord struct {
-	gast.BaseInline
+	gast.BaseBlock
 	Name   []byte
 	Indent int
 }
@@ -33,20 +33,8 @@ func (n *Chord) Kind() gast.NodeKind {
 // NewChord returns a new TaskCheckBox node.
 func NewChord(indent int, name []byte) *Chord {
 	return &Chord{
-		BaseInline: gast.BaseInline{},
-		Name:       name,
-		Indent:     indent,
+		BaseBlock: gast.BaseBlock{},
+		Name:      name,
+		Indent:    indent,
 	}
-}
-
-type Chords []Chord
-
-func (c Chords) FindChordsWithin(start, end int) (matching Chords) {
-	for _, chord := range c {
-		if chord.Indent <= start && chord.Indent >= end {
-			matching = append(matching, chord)
-		}
-	}
-
-	return matching
 }

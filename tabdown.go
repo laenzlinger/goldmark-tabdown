@@ -56,22 +56,55 @@ func (b *chordBlockParser) Open(parent gast.Node, reader text.Reader, pc parser.
 		return nil, parser.NoChildren
 	}
 
-	reader.SkipSpaces()
-	_, segment := reader.PeekLine()
 	chordBlock := ast.NewChordBlock()
-	chordBlock.Lines().Append(segment)
-	reader.Advance(segment.Len() - 1)
+
+	line, _ = reader.PeekLine()
+	m := taskListRegexp.FindSubmatchIndex(line)
+	for m != nil {
+		value := line[m[2]:m[3]]
+		indent := reader.LineOffset() + m[2] - 1
+		chord := ast.NewChord(indent, value)
+		chordBlock.AppendChild(chordBlock, chord)
+		reader.Advance(m[1] - 1)
+		line, _ = reader.PeekLine()
+		m = taskListRegexp.FindSubmatchIndex(line)
+	}
 	return chordBlock, parser.NoChildren
 }
 
 func (b *chordBlockParser) Continue(node gast.Node, reader text.Reader, pc parser.Context) parser.State {
-	line, segment := reader.PeekLine()
-	if util.IsBlank(line) {
-		reader.Advance(segment.Len() - 1)
-		return parser.Continue | parser.NoChildren
+	_, lyrics := reader.PeekLine()
+	if node.FirstChild() == nil {
+		return parser.Close
 	}
-	node.Lines().Append(segment)
-	reader.Advance(segment.Len() - 1)
+	chord := node.FirstChild().(*ast.Chord)
+	if chord.Indent > 0 {
+		prefix := text.NewSegment(lyrics.Start, lyrics.Start+chord.Indent)
+		text := gast.NewTextBlock()
+		text.Lines().Append(prefix)
+		node.InsertBefore(node, chord, text)
+	}
+	for {
+		start := lyrics.Start + chord.Indent
+		if start > lyrics.Stop {
+			start = lyrics.Stop
+		}
+		if chord.NextSibling() == nil {
+			segment := text.NewSegment(start, lyrics.Stop)
+			chord.Lines().Append(segment)
+			break
+		}
+		nextChord := chord.NextSibling().(*ast.Chord)
+		stop := lyrics.Start + nextChord.Indent
+		if stop > lyrics.Stop {
+			stop = lyrics.Stop
+		}
+		segment := text.NewSegment(start, stop)
+		chord.Lines().Append(segment)
+		chord = nextChord
+	}
+
+	reader.Advance(lyrics.Len() - 1)
 	return parser.Close
 }
 
@@ -107,7 +140,7 @@ func (s *chordParser) Trigger() []byte {
 	return []byte{'['}
 }
 
-var taskListRegexp = regexp.MustCompile(`^\[(.*?)\]\s*`)
+var taskListRegexp = regexp.MustCompile(`\[(.*?)\]`)
 
 func (s *chordParser) Parse(parent gast.Node, block text.Reader, pc parser.Context) gast.Node {
 	// Given AST structure must be like
@@ -188,9 +221,6 @@ func (e *tabdown) Extend(m goldmark.Markdown) {
 	m.Parser().AddOptions(
 		parser.WithBlockParsers(
 			util.Prioritized(NewChordBlockParser(), 0),
-		),
-		parser.WithInlineParsers(
-			util.Prioritized(NewChordParser(), 0),
 		),
 	)
 	m.Renderer().AddOptions(renderer.WithNodeRenderers(
