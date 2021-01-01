@@ -50,6 +50,8 @@ func isChordLine(line []byte) bool {
 	return nrOfChords > 0
 }
 
+var chordRegexp = regexp.MustCompile(`\[(.*?)\]`)
+
 func (b *chordBlockParser) Open(parent gast.Node, reader text.Reader, pc parser.Context) (gast.Node, parser.State) {
 	line, _ := reader.PeekLine()
 	if !isChordLine(line) {
@@ -59,7 +61,7 @@ func (b *chordBlockParser) Open(parent gast.Node, reader text.Reader, pc parser.
 	chordBlock := ast.NewChordBlock()
 
 	line, _ = reader.PeekLine()
-	m := taskListRegexp.FindSubmatchIndex(line)
+	m := chordRegexp.FindSubmatchIndex(line)
 	for m != nil {
 		value := line[m[2]:m[3]]
 		indent := reader.LineOffset() + m[2] - 1
@@ -67,7 +69,7 @@ func (b *chordBlockParser) Open(parent gast.Node, reader text.Reader, pc parser.
 		chordBlock.AppendChild(chordBlock, chord)
 		reader.Advance(m[1] - 1)
 		line, _ = reader.PeekLine()
-		m = taskListRegexp.FindSubmatchIndex(line)
+		m = chordRegexp.FindSubmatchIndex(line)
 	}
 	return chordBlock, parser.NoChildren
 }
@@ -122,55 +124,6 @@ func (b *chordBlockParser) CanAcceptIndentedLine() bool {
 // NewChordBlockParser returns a BlockParser that can parse Tabdown blocks.
 func NewChordBlockParser() parser.BlockParser {
 	return defaultChordBlockParser
-}
-
-type chordParser struct {
-}
-
-var defaultChordParser = &chordParser{}
-
-// NewChordParser returns a new  InlineParser that can parse
-// Chords in a ChordBlock.
-// This parser must take precedence over the parser.LinkParser.
-func NewChordParser() parser.InlineParser {
-	return defaultChordParser
-}
-
-func (s *chordParser) Trigger() []byte {
-	return []byte{'['}
-}
-
-var taskListRegexp = regexp.MustCompile(`\[(.*?)\]`)
-
-func (s *chordParser) Parse(parent gast.Node, block text.Reader, pc parser.Context) gast.Node {
-	// Given AST structure must be like
-	// - ChordBlock
-	//     (current line)
-	if parent.Parent() == nil {
-		return nil
-	}
-	if _, ok := parent.(*ast.ChordBlock); !ok {
-		return nil
-	}
-	nr, _ := block.Position()
-	if nr > 0 {
-		return nil
-	}
-
-	line, _ := block.PeekLine()
-	m := taskListRegexp.FindSubmatchIndex(line)
-	if m == nil {
-		return nil
-	}
-	value := line[m[2]:m[3]]
-	indent := block.LineOffset() + m[2] - 1
-	block.Advance(m[1])
-
-	return ast.NewChord(indent, value)
-}
-
-func (s *chordParser) CloseBlock(parent gast.Node, pc parser.Context) {
-	// nothing to do
 }
 
 // ChordBlockHTMLRenderer is a renderer.NodeRenderer implementation that
