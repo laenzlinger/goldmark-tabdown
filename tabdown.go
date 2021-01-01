@@ -146,9 +146,28 @@ func NewChordBlockHTMLRenderer(opts ...html.Option) renderer.NodeRenderer {
 // RegisterFuncs implements renderer.NodeRenderer.RegisterFuncs.
 func (r *ChordBlockHTMLRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 	reg.Register(ast.KindChordBlock, r.renderChordBlock)
+	reg.Register(ast.KindChord, r.renderChord)
 }
 
-func (r *ChordBlockHTMLRenderer) renderChordBlock(w util.BufWriter, source []byte, n gast.Node, entering bool) (gast.WalkStatus, error) {
+func (r *ChordBlockHTMLRenderer) renderChordBlock(w util.BufWriter, source []byte, node gast.Node, entering bool) (gast.WalkStatus, error) {
+	if entering {
+		_, _ = w.WriteString("<div class='chord-block'>")
+	} else {
+		_, _ = w.WriteString("</div>")
+	}
+	return gast.WalkContinue, nil
+}
+
+func (r *ChordBlockHTMLRenderer) renderChord(w util.BufWriter, source []byte, node gast.Node, entering bool) (gast.WalkStatus, error) {
+	n := node.(*ast.Chord)
+	if entering {
+		_, _ = w.WriteString("<span class='chord' data-name='")
+		_, _ = w.Write(n.Name)
+		_, _ = w.WriteString("'>")
+
+	} else {
+		_, _ = w.WriteString("</span>")
+	}
 	return gast.WalkContinue, nil
 }
 
