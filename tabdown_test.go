@@ -81,7 +81,7 @@ When I find myself in times of trouble, Mother Mary  comes to me
 
 	assert.Equal(t, `<h1>Let it be</h1>
 <div class='chord-block'>When I
-<span class='chord' data-name='C'>find myself in</span><span class='chord' data-name='G'>times of trouble,</span><span class='chord' data-name='Am'>Mother</span><span class='chord' data-name='Am7'>Mary</span><span class='chord' data-name='Fmaj7'>comes to</span><span class='chord' data-name='F6'>me
-</span></div><div class='chord-block'><span class='chord' data-name='C'>    Speaking <em>words</em> of</span><span class='chord' data-name='G'><a href="http://www.google.com">wisdom</a>, let it</span><span class='chord' data-name='F'>be
-</span><span class='chord' data-name='C'></span></div>`, buf.String())
+<span class='chord' data-name='C'>find myself in </span><span class='chord' data-name='G'>times of trouble, </span><span class='chord' data-name='Am'>Mother </span><span class='chord' data-name='Am7'>Mary </span><span class='chord' data-name='Fmaj7'>comes to </span><span class='chord' data-name='F6'>me
+ </span></div><div class='chord-block'><span class='chord' data-name='C'>    Speaking <em>words</em> of </span><span class='chord' data-name='G'><a href="http://www.google.com">wisdom</a>, let it </span><span class='chord' data-name='F'>be
+ </span><span class='chord' data-name='C'> </span></div>`, buf.String())
 }
