@@ -1,5 +1,5 @@
-goldmark-tabdown
-================
+# goldmark-tabdown
+
 [![GoDev][godev-image]][godev-url]
 
 [godev-image]: https://pkg.go.dev/badge/github.com/laenzlinger/goldmark-tabdown
@@ -9,8 +9,7 @@ goldmark-tabdown
 goldmark-tabdown is an extension for the [goldmark](http://github.com/yuin/goldmark) 
 that allows you to parse [Tabdown](https://github.com/ultimate-guitar/Tabdown) documents.
 
-Usage
------
+## Usage
 
 ### Installation
 
@@ -31,10 +30,10 @@ go get github.com/laenzlinger/goldmark-tabdown
 ```
 
 
-License
--------
+## License
+
 MIT
 
-Author
-------
+## Author
+
 Christof Laenzlinger
