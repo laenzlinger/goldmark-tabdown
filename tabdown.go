@@ -163,7 +163,7 @@ func (r *ChordBlockHTMLRenderer) renderChord(w util.BufWriter, source []byte, no
 	if entering {
 		_, _ = w.WriteString("<span class='chord'><span class='chord-name'>")
 		_, _ = w.Write(n.Name)
-		_, _ = w.WriteString("</span> ")
+		_, _ = w.WriteString("</span>")
 
 	} else {
 		_, _ = w.WriteString(" </span>")
