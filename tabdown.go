@@ -166,7 +166,7 @@ func (r *ChordBlockHTMLRenderer) renderChord(w util.BufWriter, source []byte, no
 		_, _ = w.WriteString("</span>")
 
 	} else {
-		_, _ = w.WriteString(" </span>")
+		_, _ = w.WriteString("</span> ")
 	}
 	return gast.WalkContinue, nil
 }
