@@ -22,6 +22,18 @@ func (n *Chord) Dump(source []byte, level int) {
 	gast.DumpHelper(n, source, level, m, nil)
 }
 
+func (n *Chord) EndsWithSpace(source []byte) bool {
+	if n.LastChild() == nil {
+		return false
+	}
+	if n.Lines().Len() <= 0 {
+		return false
+	}
+	lastLine := n.Lines().At(n.Lines().Len() - 1)
+	trimmedLine := lastLine.TrimRightSpace(source)
+	return trimmedLine.Len() < lastLine.Len()
+}
+
 // KindChord is a NodeKind of the Chord node.
 var KindChord = gast.NewNodeKind("Chord")
 
