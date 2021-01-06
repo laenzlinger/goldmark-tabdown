@@ -161,9 +161,9 @@ func (r *ChordBlockHTMLRenderer) renderChordBlock(w util.BufWriter, source []byt
 func (r *ChordBlockHTMLRenderer) renderChord(w util.BufWriter, source []byte, node gast.Node, entering bool) (gast.WalkStatus, error) {
 	n := node.(*ast.Chord)
 	if entering {
-		_, _ = w.WriteString("<span class='chord'><span class='chord-name'>")
+		_, _ = w.WriteString("<span class='chord' data-name='")
 		_, _ = w.Write(n.Name)
-		_, _ = w.WriteString("</span>")
+		_, _ = w.WriteString("'>")
 
 	} else {
 		if n.EndsWithSpace(source) {
